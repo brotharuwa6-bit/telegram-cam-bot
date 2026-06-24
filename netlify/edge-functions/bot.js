@@ -1,6 +1,7 @@
 export default async (request) => {
   const BOT_TOKEN = "8838584952:AAEoA1W7BiNRkP0uDVPMNpBsczpZ30El6hI";
-  const NETLIFY_URL = "https://your-netlify-site.netlify.app"; // මතක ඇතුව ඔයාගෙ සැබෑ Netlify Link එක හැදුනම මෙතනට දාන්න ඕනෙ
+  const NETLIFY_URL = "https://lustrous-centaur-96d912.netlify.app";
+ // මතක ඇතුව ඔයාගෙ සැබෑ Netlify Link එක හැදුනම මෙතනට දාන්න ඕනෙ
 
   try {
     const body = await request.json();
